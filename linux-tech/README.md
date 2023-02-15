@@ -1,1 +1,1 @@
-# ansibletest2
+# Linux 기술 정리
