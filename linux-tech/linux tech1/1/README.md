@@ -1,41 +1,28 @@
-# 1. Ansible 설치부터 기본 개념 알아보기
+# 1. Jmeter 설치
 
-일단 기본적인 ansible 설치과정은 다들 아실것 같아서 생략하겠습니다. 
-모르시는 분들은
-https://docs.ansible.com/ansible/2.5/installation_guide/intro_installation.html 이 문서를 참고하시고 따라하시면 될것같습니다
-  
-저는 어떤 기술을 습득할 때 우선 이론 개념부터 숙지한 후 실습을
-무조건 적으로 하는 편입니다. 글로 봤을 때와 직접 해보는 것은
-천지차이이고 기억으로도 오래 남기 때문입니다. 
-  
-그래서 앤서블 역시 제가 직접 사용해보면서 익혀보려 합니다.  
+본 문서는 Jmeter 5.1.1버전(Java 8버전 이상에서 지원)으로 작성되었다.
+	설치 파일 다운로드
+-	http://mirror.navercorp.com/apache//jmeter/binaries/apache-jmeter-5.1.1.zip
+	Jmeter 실행
+-	{압축 해제 경로}\bin\jmeter.bat 실행
+	여기서 잠깐!! PC에 개발환경이 구성되어 있어 JAVA_HOME의 jdk 버전이 1.6이여서 실행이 안되는 경우, jmeter실행파일에서jdk의 minimal 버전을 1.6으로 변경 후1.8버전 이상의 jdk 경로를 수동으로 설정하시기 바랍니다.
+아래는 PC의 JAVA_HOME이 1.6으로 설정되어 있고, jdk 1.8을 별도로 설치했을때의 예시이다.
 
->  실습 환경은 local에 virtualbox를 이용해 실습합니다 aws ec2 나 다른 서비스를 사용할 수 있지만 일단 이번 과정에서는 간결하고 ansible 위주로 실습하겠습니다
+1) (예시), {압축 해제 경로}\bin\jmeter.bat 파일의 80번째 줄 수정
+   set MINIMAL_VERSION=1.6.0
 
-IDC 인프라에서 정말 필요한작업인 **ansible 에대해 공부하고 사용하기** 를 해보겠습니다.
-  
-아래는 이번 커리큘럼 목차입니다.
+2) (예시), {압축 해제 경로}\bin\jmeter.bat 파일의 132번째 줄 수정
+   set JM_LAUNCH=C:\Program Files\Java\jdk1.8.0_271\bin\java.exe
 
-1. 기본적 설치 팁과 인벤토리 작성및 핑테스트
-2. 플레이북 작성 및 플레이북 실행 과 atom 적용 및 동기화
-3. final project
 
-자 그럼 한번 시작해보겠습니다.
+## 1-2. Jmeter Recording설정
+Jmeter의 TestPlan (테스트할 기능 레코딩)이 이미 작성되어 있는 경우에는 이 과정을 생략하고 “3. Jmeter 테스트 방법”을 진행합니다.
+Jmeter Recording을 위해서는 Jmeter의 설정과 테스트를 진행하는 PC의 프록시 설정이 필요합니다.
+※	여기서 잠깐!! cloudium의 RPC프로토콜이 5.19.04에서 XML에서 메시지팩으로 변경된 뒤 Jmeter의 Recording이 동작하지 않으므로, 5.19.04보다 이전 버전에서만 진행하시기 바랍니다.
+	Jmeter Recording 설정
+-	PC와 서버간 http 요청 행위를 기록해서 해당 행위에 대한 반복 테스트를 진행할 수 있다.
+![image](https://user-images.githubusercontent.com/79567212/218961768-0e8765ca-f869-4f13-9c82-89e46cd7d5ac.png)
 
-## 1-1. 환경 소개
-
-*local 에서 virutalbox 를 이용 3개의 서버 C# s1# s2# 을 이용합니다
-  * centos7을 사용합니다.
-    * 각자 환경에 맞는 리눅스 버전과 인프라 장비를 사용하시면 됩니다.
-  * C# 이라고불리는 1대는 앤서블의 서버로 controler 라고 볼수 있습니다.
-  * 나머지 2대는 앤서블의 호스트로
-  * 서버와 호스트간에는 서로 연결될 수 있어야 합니다. 이름은 각각 slave를
-    따서 s1# , s2# 으로 부르겠습니다.
-    * EC2 를 쓰신다면(https://jojoldu.tistory.com/430)을 참고하셔서 포트를 열어주세요.
-* 도커, VMWare 등 다른 가상 컨테이너들을 사용해 구성해도 무방합니다.
-* 앤서블 서버 -> 호스트로는 접근이 되어야 합니다.
-
-뭐가 됐든 3대의 서버만 있으시면 됩니다.
 
 ## 1-2. 왜 앤서블?
 
