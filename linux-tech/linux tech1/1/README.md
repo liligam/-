@@ -23,106 +23,45 @@ Jmeter Recording을 위해서는 Jmeter의 설정과 테스트를 진행하는 P
 -	PC와 서버간 http 요청 행위를 기록해서 해당 행위에 대한 반복 테스트를 진행할 수 있다.
 ![image](https://user-images.githubusercontent.com/79567212/218961768-0e8765ca-f869-4f13-9c82-89e46cd7d5ac.png)
 
+![image](https://user-images.githubusercontent.com/79567212/218962160-a7910036-6e72-469f-9568-63353a43ab28.png)
 
-## 1-2. 왜 앤서블?
+*hostToRecord: {테스트할 서버 IP}
+*recordingOutoutFile: {테스트 시나리오명}.xml
+*schemeToRecord: {통신 프로토콜 명, 특별한 경우가 아니라면 “http”로 입력}
 
-이미 잘 운영되고 있는 서버들에 **동일한 명령어를 수행해야 할 때가 있습니다**.
+![image](https://user-images.githubusercontent.com/79567212/218962257-74362876-84ee-44b0-acdb-fe8a7590b2ae.png)
 
-* 신규 입사자를 위한 서버 계정 생성
-  * 클라우드에서는 ec2-user로 다 통일해서 쓰는 경우가 있는데 IDC 정책상 개발자마다 서버 계정 발급 받아 써야하는 경우가 많습니다.
-* 기존 사용자의 비밀번호 변경
-* 기존 사용자의 Sudo 권한 제거
- 
+-	HTTP(S) Test Script Recorder 설정
 
-이걸 해결하기 위해 쉘 스크립트를 이용해 전체 서버에 명령을 수행하기도 합니다.  
-  
+![image](https://user-images.githubusercontent.com/79567212/218962320-6cb3e801-a187-4cdf-99a7-948dac24b35f.png)
 
-  
-**전체 서버에 동일한 명령어**를 안정적으로 수행하고 **이력 관리**가 되는게 필요하면 도구의 힘을 빌리는게 편합니다.  
-  
-앤서블 이외에도 Puppet, Chef, Salt 등이 있습니다.  
-이 중에서 앤서블을 선택한 이유는 다음과 같습니다
+*Port: {PC에서 Recording에 사용할 포트번호, 기본값 “8888”}
+*Target Controller: {레코딩이 되는 http 요청이 기록될 위치}
+*“Start” 클릭 -> 테스트용 인증서 생성 알림 화면에서 “OK” 클릭
 
--자동 배포 환경이 쉬움
-
--활발한 오픈소스
-
--play book을 통한 Infrastructure as Code(작업시 노동시간 감소, 코드화에 의한 고도의 품질 보증)
-
--ad-hoc 지원 - 임시적으로 수행하는 의미, 작업중에 별도의 일을 하기 위해 명령어를 날리는 것 정도로 이해
-
--병렬 provisioning 지원 - 여러 서버를 병렬적으로 provisioning 한다는 말 같음
-
--멱등성을 가지고 있음
-
-등등이 있고 또 많은 엔지니어들이 사용하고 있습니다
+	PC 프록시 설정
+-	PC에서 서버로 가는 요청을 Jmeter가 인식할 수 있도록 위 단계에서 지정한 포트번호와 동일한 번호로 프록시 설정을 한다.
+-	제어판 -> 인터넷 옵션 -> 프록시 서버 구성 -> 연결 탭 -> LAN 설정(L) -> “자동으로 설정 검색” 체크 해제 -> “사용자 LAN에 프록시 서버 사용” 체크 -> “주소: 127.0.0.1 / 포트: 8888”로 작성 -> 확인
+ 
 
 
+## 1-3.	Jmeter 테스트 방법
+
+	Sessionkey 생성
+-	로그인 테스트를 위해 rpcLogin API를 사용해 각 테스트 계정 마다의 sessionkey를 생성하고, 생성된 키 값을 session.csv 파일 C열에 입력한다.
+-	 Thread Group_S1_0_make_sessionkey 설정
+
+Number of Threads (users): {session.csv파일에 기록되어 있는 유저수}
+Ramp-Up Period (inseconds): {반복 테스트를 진행하는 시간, 특이사항이 없으면 600으로 설정}
+Loop Count: {반복 횟수, 특이사항이 없으면 1로 설정}
+-	위와 같이 설정 후 “초록색 화살표 버튼” 클릭
+-	http://192.168.1.190/S1/moncache.jsp 페이지에 접속하여 “userSessionIDListCache” 항목을 이용해 각 account마다의 세션 키 값을 session.csv 파일 C열에 입력한다.
+ 
+	테스트 진행
+-	“Thread Group_S1_0_make_sessionkey” 항목을 비활성화하고 나머지 항목을 활성화 한뒤 sessionkey 생성을 할 때와 같이 서버로의 요청 횟수를 지정하고 초록색 화살표 버튼을 클릭한다. (활성화 / 비활성화 방법: “Thread Group_S1_1~5… …” 우클릭 Enable / Disable)
+
+	테스트 결과 확인
+-	TestPlan 하위에 Summary 리포트에서 결과를 확인하고 화면 캡쳐를 한 뒤, 각 기능별 응답시간(Min / Max / Average)을 엑셀 장표에 기입한다.
+-	아래 엑셀파일은 테스트 결과를 작성하는 예시이다. 
 
 
-## 1-3. 앤서블 설치
-
-설치 할때 pip 명령어를 사용하면 각종 다양한 os에 적용되므로 편리합니다.
-
-공식문서를 따라가며 설치한 후 명령어를 수행해봅시다.
-
-![1](./images/1.png)
-
-그리고 명령어를 한번 수행해봅니다.
-
-```bash
-ansible localhost -m ping
-```
-
-여기까지 확인되셨다면 설치가 성공적으로 되신겁니다.  
-앤서블 서버 설정이 다 되었으니 호스트들을 등록하겠습니다.
-
-## 1-4. 호스트 등록
-  
-앤서블은 ```/etc/ansible/hosts``` 에 있는 호스트 정보를 기본적으로 읽어갑니다.  
-  
-그래서 아래와 같이 ```/etc/ansible/hosts```을 열어 호스트 정보를 등록합니다.
-
-```bash
-vim /etc/ansible/hosts
-```
-
-등록 방법은 아래처럼 사용하면 됩니다.
-
-```bash
-[web]
-호스트IP1
-호스트IP2
-```
-
-다 등록 되셨다면 호스트로 접근이 되는지 한번 테스트 해봅니다.
-
-```bash
-ansible all -m ping
-```
-
-그럼 아래와 같이 처음으로 ssh 접속에 대한 메세지가 보입니다.  
-해결책은 ```yes```를 입력하는 것입니다.
-
-
-
-
-**앤서블서버**
-
-ssh [호스트ip] 을 한번 함으로써 호스트에 접근할수 있게 됩니다. 
-  
-
-그리고 다시 한번 ping 테스트를 해봅니다.  
-
-
-명령어를 실행해보시면!
-
-
-
-ping이 성공적으로 호스트 전체에 실행된 것을 확인할 수 있습니다.
-
-
-## 1-5. 다음 과정 안내
-
-가장 첫번째 과정으로 앤서블 서버와 호스트 서버간에 연결을 해보았습니다.  
-다음엔 **앤서블플레이북 작성 및 플레이북 실행을 해보겠습니다**
